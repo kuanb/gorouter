@@ -17,10 +17,11 @@ type OsmNode struct {
 }
 
 type OsmWay struct {
-	ID       OsmWayId
-	Nodes    []OsmNodeId
-	Highway  string
-	Geometry orb.LineString
+	ID           OsmWayId
+	Nodes        []OsmNodeId
+	Highway      string
+	Geometry     orb.LineString
+	LengthMeters float64 // Total length of the way in meters
 }
 
 func (w *OsmWay) MinDistanceToLonLat(lon, lat float64) float64 {

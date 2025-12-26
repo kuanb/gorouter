@@ -20,6 +20,19 @@ func GreatCircleDistance(lon1, lat1, lon2, lat2 float64) float64 {
 	return EarthRadiusMeters * c
 }
 
+// LineStringLength calculates the total length of a line string in meters
+// by summing the great circle distances between consecutive points
+func LineStringLength(coords [][2]float64) float64 {
+	if len(coords) < 2 {
+		return 0
+	}
+	totalLength := 0.0
+	for i := 0; i < len(coords)-1; i++ {
+		totalLength += GreatCircleDistance(coords[i][0], coords[i][1], coords[i+1][0], coords[i+1][1])
+	}
+	return totalLength
+}
+
 // PointToSegmentDistance returns the shortest distance in meters from point p to the line segment ab
 // Uses equirectangular projection (accurate for short distances)
 func PointToSegmentDistance(pLon, pLat, aLon, aLat, bLon, bLat float64) float64 {

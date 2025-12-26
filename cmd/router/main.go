@@ -120,9 +120,9 @@ func (s *Server) handleMatch(w http.ResponseWriter, r *http.Request) {
 	// Run map matching
 	match := s.matcher.Match(coords)
 
-	// Build response GeoJSON
-	features := make([]interface{}, 0, len(match.MatchedWays))
-	for _, wayID := range match.MatchedWays {
+	// Use the finalPath returned from the match func for GeoJSON output
+	features := make([]interface{}, 0, len(match.FinalPath))
+	for _, wayID := range match.FinalPath {
 		way := s.graph.Ways[int64(wayID)]
 		if way == nil || len(way.Geometry) < 2 {
 			continue
@@ -136,9 +136,10 @@ func (s *Server) handleMatch(w http.ResponseWriter, r *http.Request) {
 		feature := map[string]interface{}{
 			"type": "Feature",
 			"properties": map[string]interface{}{
-				"matched": true,
-				"way_id":  wayID,
-				"stroke":  randomColor(),
+				"matched":    true,
+				"way_id":     wayID,
+				"road_class": way.Highway,
+				"stroke":     randomColor(),
 			},
 			"geometry": map[string]interface{}{
 				"type":        "LineString",

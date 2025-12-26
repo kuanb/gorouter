@@ -159,12 +159,19 @@ func LoadOsmFile(filePath string) *OsmGraph {
 					segment := way.Nodes[segStart : i+1]
 					if len(segment) >= 2 {
 						// Ensure both ends are intersection nodes
-						geom := buildLineString(segment, nodes)
+						lineGeom := buildLineString(segment, nodes)
+						// Calculate length of the way in meters
+						coords := make([][2]float64, len(lineGeom))
+						for i, pt := range lineGeom {
+							coords[i] = [2]float64{pt[0], pt[1]}
+						}
+						lengthMeters := geom.LineStringLength(coords)
 						newWay := &OsmWay{
-							ID:       OsmWayId(newWayID),
-							Nodes:    []OsmNodeId{lastIntersection, nid},
-							Highway:  way.Highway,
-							Geometry: geom,
+							ID:           OsmWayId(newWayID),
+							Nodes:        []OsmNodeId{lastIntersection, nid},
+							Highway:      way.Highway,
+							Geometry:     lineGeom,
+							LengthMeters: lengthMeters,
 						}
 						resultWays[newWayID] = newWay
 						newWayID++
