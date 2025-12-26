@@ -3,3 +3,5 @@ data/*
 scratch/*.osm.pbf
 scratch/*.geojsonl
 scratch/benchmark_results.json
+scratch/benchmark_plots.png
+scratch/benchmark_data.csv

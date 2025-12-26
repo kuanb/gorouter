@@ -8,6 +8,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"runtime"
+	"time"
 
 	"kuanb/gosm-router/geom"
 	"kuanb/gosm-router/osm"
@@ -18,6 +20,48 @@ import (
 type Server struct {
 	graph   *osm.OsmGraph
 	matcher *routing.HMMMapMatcher
+}
+
+// RuntimeMetrics holds memory and goroutine statistics
+type RuntimeMetrics struct {
+	Goroutines   int     `json:"goroutines"`
+	AllocMB      float64 `json:"alloc_mb"`       // currently allocated heap
+	TotalAllocMB float64 `json:"total_alloc_mb"` // cumulative allocated (includes freed)
+	SysMB        float64 `json:"sys_mb"`         // total memory from OS
+	HeapAllocMB  float64 `json:"heap_alloc_mb"`
+	HeapSysMB    float64 `json:"heap_sys_mb"`
+	HeapObjects  uint64  `json:"heap_objects"`
+	NumGC        uint32  `json:"num_gc"`
+}
+
+// getRuntimeMetrics collects current runtime statistics
+func getRuntimeMetrics() RuntimeMetrics {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	return RuntimeMetrics{
+		Goroutines:   runtime.NumGoroutine(),
+		AllocMB:      float64(m.Alloc) / 1024 / 1024,
+		TotalAllocMB: float64(m.TotalAlloc) / 1024 / 1024,
+		SysMB:        float64(m.Sys) / 1024 / 1024,
+		HeapAllocMB:  float64(m.HeapAlloc) / 1024 / 1024,
+		HeapSysMB:    float64(m.HeapSys) / 1024 / 1024,
+		HeapObjects:  m.HeapObjects,
+		NumGC:        m.NumGC,
+	}
+}
+
+// startMetricsLogger starts a background goroutine that logs metrics periodically
+func startMetricsLogger(interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for range ticker.C {
+			m := getRuntimeMetrics()
+			log.Printf("[metrics] goroutines=%d alloc=%.2fMB sys=%.2fMB heap_objects=%d gc_cycles=%d",
+				m.Goroutines, m.AllocMB, m.SysMB, m.HeapObjects, m.NumGC)
+		}
+	}()
 }
 
 // randomColor generates a random hex color string
@@ -145,6 +189,16 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
+
+	// Metrics endpoint
+	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		metrics := getRuntimeMetrics()
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(metrics)
+	})
+
+	// Start background metrics logging (every 30 seconds)
+	startMetricsLogger(30 * time.Second)
 
 	// Start server
 	addr := ":8080"
