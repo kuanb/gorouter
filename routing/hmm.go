@@ -79,13 +79,33 @@ func (m *HMMMapMatcher) findCandidates(coords []Coordinate) [][]Candidate {
 
 	for i, coord := range coords {
 		candidates[i] = make([]Candidate, 0)
-		for _, way := range m.Graph.Ways {
-			dist := way.MinDistanceToLonLat(coord.Lon, coord.Lat)
-			if dist >= 0 && dist <= m.MaxCandidateDist {
-				candidates[i] = append(candidates[i], Candidate{
-					WayID:    way.ID,
-					Distance: dist,
-				})
+
+		// Use RTree for fast spatial lookup if available
+		if m.Graph.RTree != nil {
+			wayIDs := m.Graph.RTree.SearchNearPoint(coord.Lon, coord.Lat, m.MaxCandidateDist)
+			for _, wayID := range wayIDs {
+				way := m.Graph.Ways[wayID]
+				if way == nil {
+					continue
+				}
+				dist := way.MinDistanceToLonLat(coord.Lon, coord.Lat)
+				if dist >= 0 && dist <= m.MaxCandidateDist {
+					candidates[i] = append(candidates[i], Candidate{
+						WayID:    way.ID,
+						Distance: dist,
+					})
+				}
+			}
+		} else {
+			// Fallback to brute force search
+			for _, way := range m.Graph.Ways {
+				dist := way.MinDistanceToLonLat(coord.Lon, coord.Lat)
+				if dist >= 0 && dist <= m.MaxCandidateDist {
+					candidates[i] = append(candidates[i], Candidate{
+						WayID:    way.ID,
+						Distance: dist,
+					})
+				}
 			}
 		}
 	}

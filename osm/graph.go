@@ -42,4 +42,5 @@ func (w *OsmWay) MinDistanceToLonLat(lon, lat float64) float64 {
 type OsmGraph struct {
 	Nodes map[int64]*OsmNode
 	Ways  map[int64]*OsmWay
+	RTree *geom.RTree
 }

@@ -6,6 +6,8 @@ import (
 	"os"
 	"runtime"
 
+	"kuanb/gosm-router/geom"
+
 	"github.com/paulmach/orb"
 	"github.com/qedus/osmpbf"
 )
@@ -174,9 +176,37 @@ func LoadOsmFile(filePath string) *OsmGraph {
 		}
 	}
 
+	// Build RTree spatial index for ways
+	rtree := geom.NewRTree()
+	for id, way := range resultWays {
+		if len(way.Geometry) == 0 {
+			continue
+		}
+		// Calculate bounding box for the way geometry
+		minLon, minLat := way.Geometry[0][0], way.Geometry[0][1]
+		maxLon, maxLat := minLon, minLat
+		for _, pt := range way.Geometry {
+			if pt[0] < minLon {
+				minLon = pt[0]
+			}
+			if pt[0] > maxLon {
+				maxLon = pt[0]
+			}
+			if pt[1] < minLat {
+				minLat = pt[1]
+			}
+			if pt[1] > maxLat {
+				maxLat = pt[1]
+			}
+		}
+		rtree.Insert(id, minLon, minLat, maxLon, maxLat)
+	}
+	log.Printf("Built RTree with %d entries", rtree.Size())
+
 	graph := &OsmGraph{
 		Nodes: resultNodes,
 		Ways:  resultWays,
+		RTree: rtree,
 	}
 	return graph
 }
