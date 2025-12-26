@@ -1,2 +1,5 @@
 .DS_Store
 data/*
+scratch/*.osm.pbf
+scratch/*.geojsonl
+scratch/benchmark_results.json
