@@ -1,6 +1,6 @@
 # gosm-router
 
-A simple routing and map matching library for auto traces built in Go.
+A simple routing and map matching library for auto traces built in Go. This project was initially created as an exploration of a very lightweight and performance-focused map matching service for short traces. To learn more, read [this blog post](https://kuanbutts.com/2025/12/25/lightweight-go-router/).
 
 ## Overview
 
